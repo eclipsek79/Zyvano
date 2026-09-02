@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+.pnpm-debug.log
+pnpm-error.log
+
+# Python
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# Rust
+target/
+Cargo.lock
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Next.js
+.next/
+.eslintcache
+
+# Tauri
+apps/desktop/src-tauri/target/
+
+# Build outputs
+dist/
+build/
+coverage/
+
+# Temporary
+*.tmp
+*.temp
