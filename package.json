@@ -1,1 +1,32 @@
-{\n  \"name\": \"zyvano\",\n  \"version\": \"0.1.0\",\n  \"description\": \"Cross-platform AI creative-production platform\",\n  \"private\": true,\n  \"type\": \"module\",\n  \"engines\": {\n    \"node\": \"22.19.0\",\n    \"pnpm\": \"10.15.1\"\n  },\n  \"scripts\": {\n    \"dev\": \"turbo dev\",\n    \"build\": \"turbo build\",\n    \"lint\": \"turbo lint\",\n    \"typecheck\": \"turbo typecheck\",\n    \"test\": \"turbo test\",\n    \"clean\": \"turbo clean\",\n    \"validate:deps\": \"node scripts/validate-deps.mjs\",\n    \"validate:repo\": \"node scripts/validate-repo.mjs\",\n    \"validate\": \"pnpm validate:repo && pnpm validate:deps && pnpm lint && pnpm typecheck && pnpm test && pnpm build\"\n  },\n  \"devDependencies\": {\n    \"turbo\": \"2.0.11\",\n    \"typescript\": \"5.8.3\"\n  },\n  \"packageManager\": \"pnpm@10.15.1\"\n}\n
+{
+  "name": "zyvano",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Cross-platform AI creative-production platform",
+  "engines": {
+    "node": "22.19.0",
+    "pnpm": "10.15.1"
+  },
+  "packageManager": "pnpm@10.15.1",
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "clean": "turbo run clean && rm -rf node_modules pnpm-lock.yaml",
+    "validate": "node scripts/validate.mjs",
+    "validate:repo": "node scripts/validate-repo.mjs",
+    "validate:deps": "node scripts/validate-deps.mjs",
+    "db:migrate": "uv run --directory backend alembic -c ../../database/alembic.ini upgrade head",
+    "db:revision": "uv run --directory backend alembic -c ../../database/alembic.ini revision --autogenerate",
+    "db:downgrade": "uv run --directory backend alembic -c ../../database/alembic.ini downgrade -1",
+    "db:history": "uv run --directory backend alembic -c ../../database/alembic.ini history",
+    "backend:dev": "uv run --directory backend uvicorn src.main:app --reload --host 0.0.0.0 --port 8000"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.11",
+    "typescript": "^5.8.3"
+  }
+}
