@@ -36,6 +36,7 @@ dev = [
 
 [tool.setuptools]
 packages = ["vid"]
+package-dir = {"" = "src"}
 
 [tool.black]
 line-length = 100
