@@ -1,5 +1,5 @@
 """Database module."""
-from vid.db.session import Base, get_db, get_async_db, SessionLocal, AsyncSessionLocal
+from vid.db.session import Base, get_db, SessionLocal
 from vid.db.models import (
     User, Project, ProjectMember, MediaAsset, GenerationJob, GenerationAttempt,
     Export, AuditLog, QueueJob,
@@ -11,9 +11,7 @@ __all__ = [
     # Session management
     "Base",
     "get_db",
-    "get_async_db",
     "SessionLocal",
-    "AsyncSessionLocal",
     # Models
     "User",
     "Project",
