@@ -2,6 +2,7 @@
   "name": "zyvano",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "description": "Zyvano — production-grade AI video creation platform",
   "license": "UNLICENSED",
   "workspaces": [
@@ -11,6 +12,7 @@
   "engines": {
     "node": ">=20.0.0"
   },
+  "packageManager": "npm@11.19.0",
   "scripts": {
     "build": "npm run build:api && npm run build:worker && npm run build:web",
     "build:api": "node scripts/build.mjs apps/api",
@@ -34,7 +36,21 @@
     "dev:web": "npm run dev -w @zyvano/web",
     "start:api": "node dist/api/index.js",
     "start:worker": "node dist/worker/index.js",
-    "security:audit": "npm audit --audit-level=high"
+    "security:audit": "npm audit --audit-level=high",
+    "clean": "rm -rf dist apps/*/dist packages/*/dist",
+    "repo:validate": "node scripts/validate.mjs",
+    "repo:validate-structure": "node scripts/validate-repo.mjs",
+    "repo:validate-deps": "node scripts/validate-deps.mjs",
+    "turbo:build": "turbo run build",
+    "turbo:lint": "turbo run lint",
+    "turbo:typecheck": "turbo run typecheck",
+    "turbo:test": "turbo run test",
+    "turbo:dev": "turbo run dev --parallel",
+    "backend:dev": "uv run --directory backend uvicorn main:app --reload --host 0.0.0.0 --port 8000",
+    "backend:migrate": "uv run --directory backend alembic -c alembic.ini upgrade head",
+    "backend:revision": "uv run --directory backend alembic -c alembic.ini revision --autogenerate",
+    "backend:downgrade": "uv run --directory backend alembic -c alembic.ini downgrade -1",
+    "backend:history": "uv run --directory backend alembic -c alembic.ini history"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.600.0",
@@ -79,6 +95,7 @@
     "prettier": "^3.3.3",
     "supertest": "^7.0.0",
     "tsx": "^4.16.2",
+    "turbo": "^2.0.11",
     "typescript": "^5.5.4",
     "vite": "^5.4.0",
     "vitest": "^2.0.5"

@@ -1,0 +1,13 @@
+name: Setup Environment
+description: Setup Node, pnpm, and dependencies
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '22.19.0'
+    - run: npm install -g pnpm@10.15.1
+      shell: bash
+    - run: pnpm install --frozen-lockfile || true
+      shell: bash

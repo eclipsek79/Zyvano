@@ -1,21 +1,72 @@
+# =============================================================================
+# Zyvano — combined ignore rules
+#
+# The repository holds two stacks:
+#   * TypeScript / Node 20  — apps/, packages/  (npm workspaces)
+#   * Python 3.12 / FastAPI — backend/          (uv + alembic)
+# Rules for both are kept so neither stack's build output or virtualenvs can be
+# committed. Explicitly ignored is the ONLY safe default for environment files:
+# a deployment holds real secrets in `.env.production` / `.env.staging`.
+# =============================================================================
+
+# --- Dependencies ------------------------------------------------------------
 node_modules/
+.pnpm-debug.log
+pnpm-error.log
+
+# --- Build output ------------------------------------------------------------
 dist/
 build/
 coverage/
+*.tsbuildinfo
+.vite/
+.next/
+.eslintcache
+eslint-report.json
+
+# --- Logs --------------------------------------------------------------------
 *.log
+
+# --- Environment -------------------------------------------------------------
+# Ignore every variant; only the documented template is tracked.
 .env
 .env.local
 .env.*
 !.env.example
-.DS_Store
+
+# --- Python ------------------------------------------------------------------
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
+
+# --- Rust --------------------------------------------------------------------
+# Present for the toolchain declared in .tool-versions; no Rust target exists in
+# the tree yet. Cargo.lock is intentionally NOT ignored — lockfiles belong in VCS.
+target/
+
+# --- Local runtime / scratch -------------------------------------------------
+# storage/ and storage-e2e/ hold local-driver media; .zyvano/ holds rotation and
+# migration scratch. None of it is source.
 storage/
 storage-e2e/
 uploads/
 .zyvano/
 tmp/
+*.tmp
+*.temp
 playwright-report/
 test-results/
-*.tsbuildinfo
-.vite/
-eslint-report.json
 debug-fail.png
+
+# --- IDEs / OS ---------------------------------------------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
