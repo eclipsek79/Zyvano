@@ -1,0 +1,20 @@
+{
+  /*
+   * Typecheck project for the Playwright specs and the Playwright configuration itself.
+   *
+   * These files are deliberately separate from `tests/tsconfig.json`: that project is
+   * scoped to the Vitest suites and types its globals as Node only, whereas these run in
+   * Playwright's own runner and under `page.evaluate`, where the ambient types are the
+   * browser's. Keeping them apart is what makes `npm run typecheck:e2e` a meaningful
+   * check rather than one that passes because the specs were never really examined.
+   */
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["node"]
+  },
+  "include": ["./**/*.ts", "../../playwright.config.ts"]
+}

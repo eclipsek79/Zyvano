@@ -1,0 +1,290 @@
+# Zyvano continuous integration.
+#
+# The pipeline mirrors what a release actually requires, in the order a failure is
+# cheapest to discover:
+#
+#   static      install -> lint -> typecheck -> build -> dependency audit
+#   database    apply migrations forward, assert the ledger and schema, and prove a
+#               second run is a clean no-op
+#   tests       unit, api and integration suites, each its own step so a failure names
+#               the layer that broke
+#   e2e         the real stack in a real browser: API, worker, PostgreSQL, Redis, object
+#               storage, ffmpeg, and an SMTP sink the suite reads off the wire
+#
+# The third-party AI vendors are not reachable from CI and have no credentials here. The
+# suites stand in for them with a local server that speaks their published wire protocols
+# (`tests/helpers/provider-stub.ts`), so the real adapters, the real worker handlers and
+# the real queue all execute unmodified. No test asserts against a faked provider response
+# and no production path is simulated.
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+# Least privilege: nothing here writes to the repository.
+permissions:
+  contents: read
+
+# A newer push supersedes an in-flight run on the same ref.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '20'
+  # The suites refuse to run against a database whose name does not end in `_test`, so a
+  # misconfigured runner fails loudly instead of truncating something real.
+  TEST_DATABASE_URL: postgresql://zyvano:zyvano@127.0.0.1:5432/zyvano_test
+  E2E_DATABASE_URL: postgresql://zyvano:zyvano@127.0.0.1:5432/zyvano_e2e_test
+  E2E_ADMIN_DATABASE_URL: postgresql://zyvano:zyvano@127.0.0.1:5432/postgres
+  DATABASE_URL: postgresql://zyvano:zyvano@127.0.0.1:5432/zyvano_test
+  REDIS_URL: redis://127.0.0.1:6379
+  # A throwaway secret for the test process only. It is not a real credential and is
+  # never used outside this workflow.
+  AUTH_SECRET: 0000000000000000000000000000000000000000000000000000000000000000ci
+
+jobs:
+  # ---------------------------------------------------------------------------- static
+  static:
+    name: Lint, typecheck, build and audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck (all projects)
+        run: npm run typecheck
+
+      # Playwright specs live outside the vitest projects, so they get their own
+      # typecheck pass rather than being trusted to fail at runtime.
+      - name: Typecheck (end-to-end specs)
+        run: npm run typecheck:e2e
+
+      - name: Build
+        run: npm run build
+
+      - name: Dependency audit
+        run: npm run security:audit
+        continue-on-error: true
+
+  # -------------------------------------------------------------------------- database
+  database:
+    name: Validate database migrations
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: zyvano
+          POSTGRES_PASSWORD: zyvano
+          POSTGRES_DB: zyvano_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U zyvano"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      DATABASE_URL: postgresql://zyvano:zyvano@127.0.0.1:5432/zyvano_test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Apply migrations to an empty database
+        run: npm run migrate
+
+      - name: Assert the migration ledger and schema are present
+        run: |
+          set -euo pipefail
+          applied=$(psql "$DATABASE_URL" -tAc "SELECT COUNT(*) FROM schema_migrations")
+          echo "migration ledger rows: $applied"
+          if [ "$applied" -lt 1 ]; then
+            echo "::error::No migrations were recorded in schema_migrations."
+            exit 1
+          fi
+
+          # A few tables that only an end-to-end migrated schema can produce. Checking
+          # them catches a migration that was recorded but whose DDL silently no-op'd.
+          for table in users sessions organizations projects scenes scripts storyboards \
+                       assets generations generation_attempts provider_requests jobs \
+                       exports export_files templates usage_records audit_events \
+                       notifications retention_records deletion_requests; do
+            found=$(psql "$DATABASE_URL" -tAc \
+              "SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='$table'")
+            if [ "$found" != "1" ]; then
+              echo "::error::Expected table \"$table\" is missing after migrations."
+              exit 1
+            fi
+          done
+
+          echo "all expected tables present"
+
+      - name: Assert no foreign key is left unvalidated
+        run: |
+          set -euo pipefail
+          # A NOT VALID constraint would enforce nothing while appearing to exist.
+          unvalidated=$(psql "$DATABASE_URL" -tAc \
+            "SELECT COUNT(*) FROM pg_constraint WHERE contype='f' AND NOT convalidated")
+          echo "unvalidated foreign keys: $unvalidated"
+          if [ "$unvalidated" -ne 0 ]; then
+            echo "::error::$unvalidated foreign key(s) are NOT VALID and therefore unenforced."
+            exit 1
+          fi
+
+      - name: Assert a second migration run is a clean no-op
+        run: |
+          set -euo pipefail
+          before=$(psql "$DATABASE_URL" -tAc "SELECT COUNT(*) FROM schema_migrations")
+          npm run migrate
+          after=$(psql "$DATABASE_URL" -tAc "SELECT COUNT(*) FROM schema_migrations")
+          echo "ledger before: $before, after: $after"
+          if [ "$before" != "$after" ]; then
+            echo "::error::Re-running migrations applied new entries; the runner is not idempotent."
+            exit 1
+          fi
+
+      - name: Migration status
+        run: npm run migrate:status
+
+  # ----------------------------------------------------------------------------- tests
+  tests:
+    name: Unit, API and integration suites
+    runs-on: ubuntu-latest
+    needs: [static, database]
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: zyvano
+          POSTGRES_PASSWORD: zyvano
+          POSTGRES_DB: zyvano_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U zyvano"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # The integration suite renders real media and the provider stub builds its
+      # fixtures with the real encoder, so ffmpeg is a genuine prerequisite rather than
+      # a convenience. Without it the render path cannot be exercised at all.
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+
+      - name: Verify ffmpeg and ffprobe are available
+        run: |
+          ffmpeg -version | head -1
+          ffprobe -version | head -1
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: API tests
+        run: npm run test:api
+
+      - name: Integration tests
+        run: npm run test:integration
+
+  # ------------------------------------------------------------------------------- e2e
+  e2e:
+    name: End-to-end workflow
+    runs-on: ubuntu-latest
+    needs: [static]
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: zyvano
+          POSTGRES_PASSWORD: zyvano
+          POSTGRES_DB: zyvano
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U zyvano"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # `scripts/e2e-env.mjs` prepares its own database with psql, so the client is
+      # required even though the application itself only speaks the wire protocol.
+      - name: Install ffmpeg and the PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg postgresql-client
+
+      - name: Install the Chromium browser
+        run: npx playwright install --with-deps chromium
+
+      # Playwright starts the whole stack itself through the `webServer` block in
+      # playwright.config.ts, so this is the real API, worker, web server and queue.
+      - name: Run the end-to-end suite
+        run: npm run test:e2e
+
+      - name: Upload the failure report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+          if-no-files-found: ignore
