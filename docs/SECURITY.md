@@ -325,7 +325,7 @@ app.use(cors(corsOptions));
 
 Development (localhost):
 ```
-ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001
+ALLOWED_ORIGINS=http://localhost:5173
 ```
 
 Production:

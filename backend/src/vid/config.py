@@ -46,11 +46,12 @@ class Settings(BaseSettings):
         default="",
         description="Authentication secret (required, min 32 chars in production)"
     )
-    AUTH_REDIRECT_URL: str = "http://localhost:3000/auth/callback"
+    AUTH_REDIRECT_URL: str = "http://localhost:5173/auth/callback"
 
     # Application
     APP_NAME: str = "Zyvano"
     APP_VERSION: str = "0.1.0"
+    API_PORT: int = 4000
     NODE_ENV: str = Field(default="development", description="Environment: development, staging, production")
     LOG_LEVEL: str = "info"
     DEBUG: bool = False
@@ -60,7 +61,7 @@ class Settings(BaseSettings):
 
     # CORS - dev defaults, must be overridden in production
     CORS_ORIGINS: List[str] = Field(
-        default=["http://localhost:3000", "http://localhost:8081"],
+        default=["http://localhost:5173", "http://localhost:8081"],
         description="Allowed CORS origins"
     )
 
