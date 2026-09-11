@@ -1,10 +1,9 @@
 """Global error handler middleware."""
+
 import logging
-from typing import Any
 
 from fastapi import Request
 from fastapi.responses import JSONResponse
-from starlette.exceptions import HTTPException
 
 logger = logging.getLogger(__name__)
 

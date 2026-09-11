@@ -43,6 +43,13 @@ __pycache__/
 *.pyo
 *.egg-info/
 .pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+.tox/
+.mypy_cache/
+.ruff_cache/
 
 # --- Rust --------------------------------------------------------------------
 # Present for the toolchain declared in .tool-versions; no Rust target exists in
@@ -52,6 +59,7 @@ target/
 # --- Local runtime / scratch -------------------------------------------------
 # storage/ and storage-e2e/ hold local-driver media; .zyvano/ holds rotation and
 # migration scratch. None of it is source.
+dump.rdb
 storage/
 storage-e2e/
 uploads/

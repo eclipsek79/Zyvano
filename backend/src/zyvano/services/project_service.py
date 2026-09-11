@@ -1,10 +1,11 @@
 """Project service with business logic."""
-from uuid import UUID
+
 import logging
+from uuid import UUID
 
 from sqlalchemy.orm import Session
 
-from vid.db.models import Project, User, ProjectStatus
+from zyvano.db.models import Project, ProjectStatus, User
 
 logger = logging.getLogger(__name__)
 
@@ -33,15 +34,17 @@ class ProjectService:
 
     def get_project(self, project_id: UUID, owner: User) -> Project | None:
         """Get project by ID, verifying ownership."""
-        return self.db.query(Project).filter(
-            Project.id == project_id,
-            Project.owner_id == owner.id,
-            Project.status != ProjectStatus.DELETED,
-        ).first()
+        return (
+            self.db.query(Project)
+            .filter(
+                Project.id == project_id,
+                Project.owner_id == owner.id,
+                Project.status != ProjectStatus.DELETED,
+            )
+            .first()
+        )
 
-    def list_projects(
-        self, owner: User, limit: int = 20, offset: int = 0
-    ) -> dict:
+    def list_projects(self, owner: User, limit: int = 20, offset: int = 0) -> dict:
         """List projects for user with pagination."""
         query = self.db.query(Project).filter(
             Project.owner_id == owner.id,
@@ -49,12 +52,7 @@ class ProjectService:
         )
         total = query.count()
 
-        projects = (
-            query.order_by(Project.created_at.desc())
-            .limit(limit)
-            .offset(offset)
-            .all()
-        )
+        projects = query.order_by(Project.created_at.desc()).limit(limit).offset(offset).all()
 
         return {
             "projects": projects,
@@ -64,8 +62,7 @@ class ProjectService:
         }
 
     def update_project(
-        self, project_id: UUID, owner: User, name: str | None = None, 
-        description: str | None = None
+        self, project_id: UUID, owner: User, name: str | None = None, description: str | None = None
     ) -> Project | None:
         """Update project."""
         project = self.get_project(project_id, owner)

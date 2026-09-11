@@ -12,11 +12,23 @@ dependencies = [
     "uvicorn==0.35.0",
     "pydantic==2.11.7",
     "pydantic-settings==2.4.0",
+    # Required by pydantic's EmailStr, which api/schemas.py uses. Without it
+    # `import zyvano.api.schemas` raises ImportError at import time.
+    "email-validator==2.2.0",
     "sqlalchemy==2.0.43",
     "alembic==1.16.4",
     "psycopg==3.2.9",
+    # The asyncpg driver is required by the `postgresql+asyncpg` configuration
+    # that db/session.py supports and that tests/test_db_session.py exercises.
+    # Without it, importing zyvano.db.session under an asyncpg URL raised
+    # ModuleNotFoundError, so that whole branch was unreachable.
+    "asyncpg==0.31.0",
     "python-jose[cryptography]==3.3.0",
-    "passlib[bcrypt]==1.7.4",
+    # bcrypt is used directly (see zyvano/auth/security.py). passlib 1.7.4 is
+    # incompatible with bcrypt>=4.1 -- its backend-detection probe passes an
+    # over-72-byte password, which modern bcrypt rejects -- so it is removed
+    # rather than pinned around.
+    "bcrypt==5.0.0",
     "python-multipart==0.0.6",
     "redis==5.0.1",
     "httpx==0.28.1",
@@ -29,14 +41,24 @@ dev = [
     "pytest==8.4.1",
     "pytest-asyncio==0.24.0",
     "pytest-cov==5.0.0",
-    "black==24.1.1",
-    "ruff==0.2.2",
-    "mypy==1.8.0",
+    # Pinned to the versions the gates below were actually validated against.
+    # Ruff in particular is version-sensitive: the rule set it applies when no
+    # selection is declared has grown a great deal between releases, so the
+    # lint gate is only reproducible if the pin matches the run.
+    "black==26.5.1",
+    "ruff==0.16.7",
+    "mypy==2.3.1",
 ]
 
 [tool.setuptools]
-packages = ["vid"]
 package-dir = {"" = "src"}
+
+# Discover every subpackage (zyvano.db, zyvano.auth, zyvano.services, ...).
+# The previous literal `packages = ["zyvano"]` listed only the top-level
+# module, so an installed wheel silently omitted zyvano.db, zyvano.auth and
+# zyvano.services.
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.black]
 line-length = 100
@@ -46,11 +68,65 @@ target-version = ["py312"]
 line-length = 100
 target-version = "py312"
 
+[tool.ruff.lint]
+# The rule set is declared explicitly rather than inherited. Ruff's default
+# selection has grown substantially across releases -- 0.16 enables 413 rules
+# with no configuration present at all -- so leaving it implicit would make the
+# meaning of this gate depend on the installed version, and would pull in rule
+# families this codebase has not adopted. DTZ is the clearest example: enabling
+# it would demand tz-aware datetimes, including in SQLAlchemy column defaults
+# and JWT `exp` claims that are deliberately naive UTC.
+#
+# E/W  pycodestyle        F   pyflakes          I   isort
+# UP   pyupgrade          B   bugbear           C4  comprehensions
+# SIM  simplify           RUF ruff-specific
+select = ["E", "W", "F", "I", "UP", "B", "C4", "SIM", "RUF"]
+
+# UP042 wants the built-in `enum.StrEnum`, which only exists on Python 3.11+ and
+# would change how SQLAlchemy resolves these columns (db/models.py pins the
+# lowercase values via `values_callable`). Deferred deliberately, not suppressed
+# to make the gate green -- see the _pg_enum docstring in db/models.py.
+ignore = ["UP042"]
+
+[tool.ruff.lint.per-file-ignores]
+# B008 flags a function call in an argument default. That is precisely FastAPI's
+# dependency-injection idiom (`db: Session = Depends(get_db)`), so it is ignored
+# only in the files that declare dependencies, not repo-wide.
+"src/zyvano/auth/dependencies.py" = ["B008"]
+"tests/test_auth_dependencies.py" = ["B008"]
+
 [tool.mypy]
 python_version = "3.12"
+mypy_path = "src"
+files = ["src"]
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false
+no_implicit_optional = true
+warn_redundant_casts = true
+
+[[tool.mypy.overrides]]
+# Third-party packages with no type information (no `py.typed`, no stubs on the
+# configured index), so their members resolve to Any. Scoped per module rather
+# than silencing missing imports globally.
+module = ["jose.*", "bcrypt.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# db/models.py uses the classic `Column(...)` declarative style rather than
+# SQLAlchemy 2.x's `Mapped[...]`. Migrating the whole model layer to `Mapped[]`
+# is a separate, behaviour-affecting change (every column plus 12
+# relationships), so the two error codes that exist only because of that style
+# are disabled for this module alone rather than repo-wide -- and rather than
+# enabling SQLAlchemy's plugin, which cannot see through the `_pg_enum()`
+# helper and therefore demands the full migration before it will pass.
+#
+# `assignment`    -- Column[T] assigned to an annotated T attribute.
+# `var-annotated` -- an unannotated Column whose element type is not inferable
+#                    (an Enum() built by a helper call, for example).
+# Every other check still applies to this module.
+module = ["zyvano.db.models"]
+disable_error_code = ["var-annotated"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

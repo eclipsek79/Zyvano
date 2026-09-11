@@ -1,19 +1,18 @@
 """Authentication dependencies for FastAPI."""
-from uuid import UUID
 
 from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthCredentials
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
-from vid.db.session import get_db
-from vid.db.models import User
-from vid.auth.security import verify_token
+from zyvano.auth.security import verify_token
+from zyvano.db.models import User
+from zyvano.db.session import get_db
 
 security = HTTPBearer()
 
 
 async def get_current_user(
-    credentials: HTTPAuthCredentials = Depends(security),
+    credentials: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db),
 ) -> User:
     """Get current authenticated user from JWT token."""

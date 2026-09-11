@@ -1,12 +1,13 @@
 """User service with business logic."""
-from uuid import UUID
+
 import logging
+from uuid import UUID
 
-from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
 
-from vid.db.models import User
-from vid.auth.security import hash_password, verify_password
+from zyvano.auth.security import hash_password, verify_password
+from zyvano.db.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +20,7 @@ class UserService:
 
     def create_user(self, email: str, name: str | None, password: str) -> User:
         """Create new user with validated input.
-        
+
         Raises:
             ValueError: If user already exists
         """
@@ -42,18 +43,21 @@ class UserService:
         except IntegrityError as e:
             self.db.rollback()
             logger.error(f"Database integrity error creating user: {e}")
-            raise ValueError("Could not create user")
+            # Chained so the original IntegrityError survives in the traceback
+            # for operators, while callers only ever see the safe message.
+            raise ValueError("Could not create user") from e
 
     def authenticate_user(self, email: str, password: str) -> User | None:
         """Authenticate user by email and password.
-        
+
         Returns:
             User if authentication succeeds, None otherwise
         """
         user = self.db.query(User).filter(User.email == email).first()
         if not user:
             return None
-        if not user.password_hash or not verify_password(password, user.password_hash):
+        stored_hash = user.password_hash
+        if not stored_hash or not verify_password(password, stored_hash):
             return None
         return user
 
