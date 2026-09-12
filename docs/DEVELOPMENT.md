@@ -9,9 +9,9 @@ Ensure correct tool versions:
 ```bash
 node --version       # 22.19.0
 pnpm --version       # 10.15.1
-python --version     # 3.12.11
-rustc --version      # 1.89.0
-cargo --version      # 1.89.0
+python --version     # 3.14.6
+rustc --version      # 1.98.1
+cargo --version      # 1.98.1
 ```
 
 Use `asdf` or `direnv` with `.tool-versions` for automatic version switching.

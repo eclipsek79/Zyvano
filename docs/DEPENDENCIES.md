@@ -7,10 +7,10 @@ All tools are pinned to exact versions to ensure reproducibility:
 ```
 Node.js 22.19.0
 pnpm 10.15.1
-Python 3.12.11
+Python 3.14.6
 uv 0.8.17
-Rust 1.89.0
-Cargo 1.89.0
+Rust 1.98.1
+Cargo 1.98.1
 React 19.1.0
 TypeScript 5.8.3
 ```
@@ -32,7 +32,7 @@ TypeScript 5.8.3
 - **Installation**: `uv sync --locked --directory backend`
 
 ### Rust
-- **Manager**: Cargo 1.89.0
+- **Manager**: Cargo 1.98.1
 - **Lockfile**: apps/desktop/src-tauri/Cargo.lock (committed to Git)
 - **Configuration**: apps/desktop/src-tauri/Cargo.toml
 - **Build**: `cargo check --manifest-path apps/desktop/src-tauri/Cargo.toml --locked`
@@ -259,10 +259,10 @@ See: `scripts/validate-deps.mjs`
 Validates:
 - ✅ Node.js version (22.19.0)
 - ✅ pnpm version (10.15.1)
-- ✅ Python version (3.12.11)
+- ✅ Python version (3.14.6)
 - ✅ uv version (0.8.17)
-- ✅ Rust version (1.89.0)
-- ✅ Cargo version (1.89.0)
+- ✅ Rust version (1.98.1)
+- ✅ Cargo version (1.98.1)
 - ✅ pnpm-lock.yaml exists and is valid
 - ✅ backend/uv.lock exists and is valid
 - ✅ Cargo.lock exists and is valid

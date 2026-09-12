@@ -1,0 +1,22 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node"],
+    /*
+     * The suites are executed by Vitest (esbuild, ESM) and Playwright, and several
+     * files use top-level await to configure the environment before any application
+     * module is imported. CommonJS cannot express that, so the test project is typed
+     * as ESM to match how the code actually runs.
+     */
+    "module": "ESNext",
+    "moduleResolution": "bundler"
+  },
+  "include": [
+    "**/*.ts",
+    "../apps/api/src/**/*.ts",
+    "../apps/worker/src/**/*.ts",
+    "../packages/shared/src/**/*.ts",
+    "../packages/server/src/**/*.ts"
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "strict": true,
+    "noImplicitOverride": true,
+    "noUncheckedIndexedAccess": true,
+    "noFallthroughCasesInSwitch": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "declaration": false,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "@zyvano/shared": ["packages/shared/src/index.ts"],
+      "@zyvano/shared/*": ["packages/shared/src/*"],
+      "@zyvano/server": ["packages/server/src/index.ts"],
+      "@zyvano/server/*": ["packages/server/src/*"]
+    }
+  }
+}

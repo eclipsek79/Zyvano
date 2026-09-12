@@ -10,7 +10,7 @@ Cross-platform AI creative-production platform for video, image, avatar, and cin
 
 - Node.js 22.19.0
 - pnpm 10.15.1
-- Python 3.12.11
+- Python 3.14.6
 - Rust 1.89.0
 - PostgreSQL 17.x
 

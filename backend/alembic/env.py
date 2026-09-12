@@ -17,8 +17,12 @@ logger = logging.getLogger('alembic.env')
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-from vid.db.session import Base
+from zyvano.db.session import Base
 target_metadata = Base.metadata
+
+# This backend migrates its OWN database. DATABASE_URL belongs to the
+# TypeScript platform and must never be used here: it holds projects/users/
+# exports/generation_attempts/project_members with different schemas.
 
 
 def run_migrations_offline() -> None:
@@ -33,13 +37,13 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    from vid.config import settings
+    from zyvano.config import settings
 
     configuration = config.get_section(config.config_ini_section)
-    configuration["sqlalchemy.url"] = settings.DATABASE_URL
+    configuration["sqlalchemy.url"] = settings.BACKEND_DATABASE_URL
 
     context.configure(
-        url=settings.DATABASE_URL,
+        url=settings.BACKEND_DATABASE_URL,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -56,10 +60,10 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
-    from vid.config import settings
+    from zyvano.config import settings
 
     configuration = config.get_section(config.config_ini_section)
-    configuration["sqlalchemy.url"] = settings.DATABASE_URL
+    configuration["sqlalchemy.url"] = settings.BACKEND_DATABASE_URL
 
     connectable = engine_from_config(
         configuration,

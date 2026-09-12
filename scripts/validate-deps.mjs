@@ -16,11 +16,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '..');
 
 const REQUIRED_VERSIONS = {
-  'node': '22.19.0',
+  'node': '24.18.0',
   'pnpm': '10.15.1',
-  'python': '3.12.11',
-  'rustc': '1.89.0',
-  'cargo': '1.89.0'
+  'python': '3.14.6',
+  'rustc': '1.98.1',
+  'cargo': '1.98.1'
 };
 
 function getVersion(tool) {
@@ -62,24 +62,36 @@ function validateLockfiles() {
   console.log('\n🔒 Validating lockfiles...');
   let passed = 0;
   let failed = 0;
-  
+
   const lockfiles = [
-    { path: 'pnpm-lock.yaml', name: 'pnpm lockfile' },
-    { path: 'backend/uv.lock', name: 'Python (uv) lockfile' },
-    { path: 'apps/desktop/src-tauri/Cargo.lock', name: 'Rust (Cargo) lockfile' }
+    { path: 'pnpm-lock.yaml', name: 'pnpm lockfile', required: true },
+    { path: 'backend/uv.lock', name: 'Python (uv) lockfile', required: true }
   ];
-  
+
+  const desktopProject = path.join(rootDir, 'apps/desktop/src-tauri');
+
+  if (fs.existsSync(desktopProject)) {
+    lockfiles.push({
+      path: 'apps/desktop/src-tauri/Cargo.lock',
+      name: 'Rust (Cargo) lockfile',
+      required: true
+    });
+  } else {
+    console.log('  ℹ️  Rust (Cargo) lockfile (desktop not implemented yet)');
+  }
+
   for (const lockfile of lockfiles) {
     const fullPath = path.join(rootDir, lockfile.path);
+
     if (fs.existsSync(fullPath)) {
       console.log(`  ✅ ${lockfile.name}`);
       passed++;
-    } else {
+    } else if (lockfile.required) {
       console.log(`  ❌ ${lockfile.name} (MISSING): ${lockfile.path}`);
       failed++;
     }
   }
-  
+
   return { passed, failed };
 }
 
@@ -89,19 +101,19 @@ function validateReactVersions() {
   let failed = 0;
   
   try {
-    const output = execSync('pnpm list react@19.1.0 --json --recursive --depth 0', {
+    const output = execSync('pnpm list react@19.3.0 --json --recursive --depth 0', {
       encoding: 'utf-8',
       cwd: rootDir
     });
     
     const deps = JSON.parse(output);
-    const hasReact191 = deps.some(d => d.name === 'react' && d.version === '19.1.0');
+    const hasReact193 = deps.some(d => d.name === 'react' && d.version === '19.3.0');
     
-    if (hasReact191 || output.includes('19.1.0')) {
-      console.log(`  ✅ React 19.1.0 found in workspace`);
+    if (hasReact193 || output.includes('19.3.0')) {
+      console.log(`  ✅ React 19.3.0 found in workspace`);
       passed++;
     } else {
-      console.log(`  ⚠️  React version mismatch (expected 19.1.0)`);
+      console.log(`  ⚠️  React version mismatch (expected 19.3.0)`);
       // Not counted as failed since peer dependency handling is flexible
     }
   } catch (error) {
