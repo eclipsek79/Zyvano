@@ -4,32 +4,19 @@ from vid.db.models import (
     User, Project, ProjectMember, MediaAsset, GenerationJob, GenerationAttempt,
     Export, AuditLog, QueueJob,
     UserRole, ProjectRole, ProjectType, ProjectStatus, AssetType,
-    GenerationJobStatus, GenerationJobType, ExportStatus, AuditAction
+    GenerationJobStatus, GenerationJobType, ExportStatus, AuditAction,
+)
+from vid.db.credit_models import (
+    Plan, PlanCode, UserPlan, UserCreditBalance,
+    CreditLedgerEntry, LedgerEntryType, ReservationStatus,
 )
 
 __all__ = [
-    # Session management
-    "Base",
-    "get_db",
-    "SessionLocal",
-    # Models
-    "User",
-    "Project",
-    "ProjectMember",
-    "MediaAsset",
-    "GenerationJob",
-    "GenerationAttempt",
-    "Export",
-    "AuditLog",
-    "QueueJob",
-    # Enums
-    "UserRole",
-    "ProjectRole",
-    "ProjectType",
-    "ProjectStatus",
-    "AssetType",
-    "GenerationJobStatus",
-    "GenerationJobType",
-    "ExportStatus",
-    "AuditAction",
+    "Base", "get_db", "SessionLocal",
+    "User", "Project", "ProjectMember", "MediaAsset", "GenerationJob",
+    "GenerationAttempt", "Export", "AuditLog", "QueueJob",
+    "UserRole", "ProjectRole", "ProjectType", "ProjectStatus", "AssetType",
+    "GenerationJobStatus", "GenerationJobType", "ExportStatus", "AuditAction",
+    "Plan", "PlanCode", "UserPlan", "UserCreditBalance",
+    "CreditLedgerEntry", "LedgerEntryType", "ReservationStatus",
 ]
