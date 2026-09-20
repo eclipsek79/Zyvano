@@ -8,6 +8,7 @@ from vid.db.models import (
 )
 from vid.db.credit_models import (
     Plan, PlanCode, UserPlan, UserCreditBalance,
+    Payment, PaymentMethod, PaymentStatus,
     CreditLedgerEntry, LedgerEntryType, ReservationStatus,
 )
 
@@ -18,5 +19,6 @@ __all__ = [
     "UserRole", "ProjectRole", "ProjectType", "ProjectStatus", "AssetType",
     "GenerationJobStatus", "GenerationJobType", "ExportStatus", "AuditAction",
     "Plan", "PlanCode", "UserPlan", "UserCreditBalance",
+    "Payment", "PaymentMethod", "PaymentStatus",
     "CreditLedgerEntry", "LedgerEntryType", "ReservationStatus",
 ]
