@@ -1,4 +1,4 @@
-"""FastAPI credit routes using the canonical vid.db.credit_models schema."""
+"""FastAPI credit and payment-method routes using the canonical Zyvano schema."""
 from __future__ import annotations
 from decimal import Decimal
 from typing import Optional
@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from vid.auth.dependencies import get_current_user
 from vid.db.models import User
 from vid.db.session import get_db
-from vid.db.credit_models import Plan, UserPlan, CreditLedgerEntry
+from vid.db.credit_models import Plan, UserPlan, CreditLedgerEntry, PaymentMethod
 from .config import PRICING_CONFIG
 from .entitlements import EntitlementChecker
 from .exceptions import InsufficientCreditsError
@@ -44,6 +44,25 @@ def _entitlement_response_or_raise(entitlement) -> None:
             detail=entitlement.detail,
             upgrade_path_applicable=entitlement.upgrade_path_applicable,
         ).model_dump())
+
+@router.get("/payment-methods")
+def get_payment_methods():
+    """Return checkout methods supported by Zyvano's payment abstraction.
+
+    This endpoint advertises Google Pay without pretending that a transaction
+    succeeded. A provider adapter must create/confirm the payment before
+    credits are granted.
+    """
+    return {
+        "methods": [
+            {"id": PaymentMethod.MPESA.value, "label": "M-Pesa", "enabled": True},
+            {"id": PaymentMethod.CARD.value, "label": "Visa / Mastercard", "enabled": True},
+            {"id": PaymentMethod.GOOGLE_PAY.value, "label": "Google Pay", "enabled": True},
+            {"id": PaymentMethod.APPLE_PAY.value, "label": "Apple Pay", "enabled": True},
+            {"id": PaymentMethod.PAYPAL.value, "label": "PayPal", "enabled": True},
+            {"id": PaymentMethod.BANK_TRANSFER.value, "label": "Bank transfer", "enabled": True},
+        ]
+    }
 
 @router.get("/balance")
 def get_balance(user: User = Depends(get_current_user), session: Session = Depends(get_db)):
