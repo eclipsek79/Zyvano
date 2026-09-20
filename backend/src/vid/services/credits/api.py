@@ -47,21 +47,28 @@ def _entitlement_response_or_raise(entitlement) -> None:
 
 @router.get("/payment-methods")
 def get_payment_methods():
-    """Return checkout methods supported by Zyvano's payment abstraction.
+    """Return the payment methods currently enabled for Zyvano checkout.
 
-    This endpoint advertises Google Pay without pretending that a transaction
-    succeeded. A provider adapter must create/confirm the payment before
-    credits are granted.
+    Zyvano currently accepts cards and Google Pay only. Google Pay is a
+    card-based wallet and is processed through the configured payment
+    provider; this endpoint never represents a payment as successful.
     """
     return {
+        "provider": "paystack",
         "methods": [
-            {"id": PaymentMethod.MPESA.value, "label": "M-Pesa", "enabled": True},
-            {"id": PaymentMethod.CARD.value, "label": "Visa / Mastercard", "enabled": True},
-            {"id": PaymentMethod.GOOGLE_PAY.value, "label": "Google Pay", "enabled": True},
-            {"id": PaymentMethod.APPLE_PAY.value, "label": "Apple Pay", "enabled": True},
-            {"id": PaymentMethod.PAYPAL.value, "label": "PayPal", "enabled": True},
-            {"id": PaymentMethod.BANK_TRANSFER.value, "label": "Bank transfer", "enabled": True},
-        ]
+            {
+                "id": PaymentMethod.CARD.value,
+                "label": "Card",
+                "networks": ["visa", "mastercard"],
+                "enabled": True,
+            },
+            {
+                "id": PaymentMethod.GOOGLE_PAY.value,
+                "label": "Google Pay",
+                "networks": ["visa", "mastercard"],
+                "enabled": True,
+            },
+        ],
     }
 
 @router.get("/balance")
