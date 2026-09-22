@@ -95,6 +95,7 @@ class User(Base):
     email = Column(String(255), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=True)
     name = Column(String(255), nullable=True)
+    zyvano_id = Column(String(32), unique=True, nullable=False, index=True)
     role = Column(Enum(UserRole), default=UserRole.USER, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
     is_verified = Column(Boolean, default=False, nullable=False)
