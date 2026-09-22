@@ -72,6 +72,11 @@ class Settings(BaseSettings):
 
     # Upload
     MAX_UPLOAD_SIZE_MB: int = 1024
+
+    # Direct chat attachments (private Supabase Storage bucket)
+    SUPABASE_URL: str = ""
+    SUPABASE_SERVICE_ROLE_KEY: str = ""
+    CHAT_STORAGE_BUCKET: str = "zyvano-chat"
     
     # Security headers
     SECURE_HSTS_SECONDS: int = 31536000  # 1 year

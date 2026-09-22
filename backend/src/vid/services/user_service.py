@@ -1,6 +1,7 @@
 """User service with business logic."""
 from uuid import UUID
 import logging
+import secrets
 
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
@@ -33,6 +34,7 @@ class UserService:
             email=email,
             name=name,
             password_hash=hash_password(password),
+            zyvano_id=f"ZYV-{secrets.token_hex(6).upper()}",
         )
         try:
             self.db.add(user)
