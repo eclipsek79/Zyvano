@@ -9,6 +9,7 @@ from vid.db.session import engine, Base
 from vid.middleware.request_id import RequestIDMiddleware
 from vid.middleware.error_handler import global_exception_handler
 from vid.services.credits.api import router as credits_router
+from vid.services.chat.router import router as chat_router
 
 logging.basicConfig(level=getattr(logging, settings.LOG_LEVEL.upper()),
                     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -52,6 +53,7 @@ def create_app() -> FastAPI:
             return {"ready":False,"error":"database connection failed"}, 503
 
     app.include_router(credits_router)
+    app.include_router(chat_router)
     logger.info("FastAPI application created successfully")
     return app
 
